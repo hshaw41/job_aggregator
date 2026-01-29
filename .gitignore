@@ -1,0 +1,6 @@
+venv/
+__pychache__/
+.env
+adzuna_registry_details.md
+job_posting_aggregator_PRD.md
+job_posting_aggregator_research.md
