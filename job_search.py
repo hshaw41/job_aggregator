@@ -20,6 +20,8 @@ RESULTS_PER_PAGE = 5
 SORT_DIRECTION = "up"
 SORT_BY = "date"
 FULL_TIME = "1"
+JOB_TITLES = ["ai engineer", "ml engineer", "mlops", "data engineer"] # "what" field for API
+LOCATIONS = ["gold coast", "brisbane"]
 
 def fetch_jobs(location, job_title):
     """This function fetches the top five jobs by job title and location. Returns a list of raw job result dictionaries"""
@@ -69,49 +71,83 @@ def display_job(job_data, index):
         output = f"{index}. {job_data["title"]} - {job_data["company"]} - {job_data["location"]}\n\"{job_data["description"]}\"\n[Link: {job_data["link"]}]"
     print(output + "\n")
 
-        
-job_titles = ["ai engineer", "ml engineer", "mlops", "data engineer"] # "what" field for API
-locations = ["gold coast", "brisbane"]
+def search_and_display_jobs():
+    """This function searches jobs from 4 job titles in the AI field and 2 locations. Then displays them to the user. It also returns a list of job dictionaries that were found."""
+    
+    # Request Search
+    index = 1
+    job_list = []
+    # Conduct all 8 job searches
+    for location in LOCATIONS:
+        for job_title in JOB_TITLES:
+            jobs = fetch_jobs(location, job_title) # pull jobs from Adzuna API
+            for job in jobs:
+                job_data = extract_job_data(job) # extract the data we want to display
+                display_job(job_data, index) # display the data in a readable format
+                job_list.append(job_data) # store jobs that were displayed in memory for further use.
+                index += 1
+    return job_list
 
-# Request Search
-index = 1
-job_list = []
-for location in locations:
-    for job_title in job_titles:
-        jobs = fetch_jobs(location, job_title)
-        for job in jobs:
-            job_data = extract_job_data(job)
-            display_job(job_data, index)
-            job_list.append(job_data)
-            index += 1
+def save_jobs(jobs_to_save):
+    """This function takes a list of job dictionaries and saves them to a file. If jobs have been saved in the past the function adds the new jobs to the exisiting saved list."""
 
-try:
-    with open("saved_jobs.json", "r") as f:
-        saved_jobs = json.load(f)
-except FileNotFoundError:
-    saved_jobs = []
-n_saved_jobs = 0
-print("Would you like to save any of these jobs?")
+    # Get jobs already saved if any. If no jobs create new list.
+    try:
+        with open("saved_jobs.json", "r") as f:
+            saved_jobs = json.load(f)
+    except FileNotFoundError:
+        saved_jobs = []
+    saved_jobs = saved_jobs + jobs_to_save # add new saved jobs to existing saved jobs
+    with open("saved_jobs.json", "w") as f:
+        json.dump(saved_jobs, f, indent = 2)
+    print(f"\nSuccessfully added {len(jobs_to_save)} jobs.") # confirm with the user how many jobs were saved.
+    return
+    
+# Greeting    
+print("\n-------------------------------------------------------------")
+print("Welcome to your Job Aggregator!")
+print("You can search jobs in your field and save the ones you like.")
+print("-------------------------------------------------------------\n")
+current_jobs = []
 while True:
-    print("Enter a sequence of job numbers separated by commas like so: 1, 4, 7, 5")
-    print("Or q/quit to quit")
-    user_input = input("").lower().strip()
-    if user_input == "q" or user_input == "quit":
-        print("Closing...")
+    # Main menu
+    print("Enter the number that corresponds with one of the following options:")
+    print("\n1. Search Jobs")
+    if len(current_jobs) != 0:
+        print("2. Save Jobs")
+        print("3. Quit")
+    else:
+        print("2. Quit")
+
+    choice = input("\nChoice: ").strip() # get input
+
+    # Handle menu choices
+    if choice == "1": # Search Jobs
+        print("\nJobs Found:\n")
+        current_jobs = search_and_display_jobs()
+    elif choice == "2": # either Save Jobs or Quit. 
+        if len(current_jobs) != 0: # Choice is Save Jobs of jobs have been searched before, otherwise quit.
+            jobs_to_save = []
+            print("Enter a sequence of job numbers separated by commas like so: 1, 4, 7, 5")
+            job_indexes = input("\nJobs you want to save: ").strip() # get job numbers from user
+            try:
+                # Parse job numbers
+                job_indexes = job_indexes.split(",")
+                for job_index in job_indexes:
+                    job_index = int(job_index.strip())
+                    if job_index >= 1 and job_index <= len(current_jobs):
+                        jobs_to_save.append(current_jobs[job_index-1]) # store the jobs to be saved
+                    else:
+                        print(f"Job #{job_index} does not exist and was not saved. Please ensure you enter job numbers in the above list in future.")
+                save_jobs(jobs_to_save) # save jobs
+            except ValueError:
+                print("Invalid input. Please enter numbers separated by commas.")
+        else: # Choice must be quit.
+            print("\nClosing...")
+            exit(0)
+    elif choice == "3":
+        # Choice must be Quit.
+        print("\nClosing...")
         exit(0)
     else:
-        try:
-            job_indexes = user_input.split(",")
-            for job_index in job_indexes:
-                job_index = int(job_index.strip())
-                if job_index >= 1 and job_index <= len(job_list):
-                    saved_jobs.append(job_list[job_index-1])
-                    n_saved_jobs += 1
-                else:
-                    print(f"Job #{job_index} does not exist and was not saved. Please ensure you enter job numbers in the above list in future.")
-            with open("saved_jobs.json", "w") as f:
-                json.dump(saved_jobs, f, indent = 2)
-            print(f"Successfully added {n_saved_jobs} jobs.")
-            break
-        except ValueError:
-            print("Invalid input. Please enter numbers separated by commas.")
+        print("\nInvalid input, please enter one of the option numbers listed.\n")
