@@ -1,6 +1,7 @@
 from requests import get
 from dotenv import load_dotenv
 import os
+import json
 
 # Load environment variables
 load_dotenv()
@@ -74,10 +75,43 @@ locations = ["gold coast", "brisbane"]
 
 # Request Search
 index = 1
+job_list = []
 for location in locations:
     for job_title in job_titles:
         jobs = fetch_jobs(location, job_title)
         for job in jobs:
             job_data = extract_job_data(job)
             display_job(job_data, index)
+            job_list.append(job_data)
             index += 1
+
+try:
+    with open("saved_jobs.json", "r") as f:
+        saved_jobs = json.load(f)
+except FileNotFoundError:
+    saved_jobs = []
+n_saved_jobs = 0
+print("Would you like to save any of these jobs?")
+while True:
+    print("Enter a sequence of job numbers separated by commas like so: 1, 4, 7, 5")
+    print("Or q/quit to quit")
+    user_input = input("").lower().strip()
+    if user_input == "q" or user_input == "quit":
+        print("Closing...")
+        exit(0)
+    else:
+        try:
+            job_indexes = user_input.split(",")
+            for job_index in job_indexes:
+                job_index = int(job_index.strip())
+                if job_index >= 1 and job_index <= len(job_list):
+                    saved_jobs.append(job_list[job_index-1])
+                    n_saved_jobs += 1
+                else:
+                    print(f"Job #{job_index} does not exist and was not saved. Please ensure you enter job numbers in the above list in future.")
+            with open("saved_jobs.json", "w") as f:
+                json.dump(saved_jobs, f, indent = 2)
+            print(f"Successfully added {n_saved_jobs} jobs.")
+            break
+        except ValueError:
+            print("Invalid input. Please enter numbers separated by commas.")
