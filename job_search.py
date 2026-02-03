@@ -17,8 +17,6 @@ ADZUNA_BASE_URL = "https://api.adzuna.com/v1/api"
 COUNTRY = "au"
 PAGE = "1"
 RESULTS_PER_PAGE = 5
-SORT_DIRECTION = "up"
-SORT_BY = "date"
 FULL_TIME = "1"
 JOB_TITLES = ["ai engineer", "ml engineer", "mlops", "data engineer"] # "what" field for API
 LOCATIONS = ["gold coast", "brisbane"]
@@ -109,7 +107,27 @@ def load_saved_jobs():
         saved_jobs = []
 
     return saved_jobs
+
+def select_jobs(current_jobs):
+    """This function asks the user for a list of jobs to save and returns the list of those jobs."""
     
+    selected_jobs = []
+    print("\nEnter a sequence of job numbers separated by commas like so: 1, 4, 7, 5")
+    job_indexes = input("\nJobs you want to save: ").strip() # get job numbers from user
+    try:
+        # Parse job numbers
+        job_indexes = job_indexes.split(",")
+        for job_index in job_indexes:
+            job_index = int(job_index.strip())
+            if job_index >= 1 and job_index <= len(current_jobs):
+                selected_jobs.append(current_jobs[job_index-1]) # store the jobs to be saved
+            else:
+                print(f"\nJob #{job_index} does not exist and was not saved. Please ensure you enter job numbers in the above list in future.")
+    except ValueError:
+        print("\nInvalid input. Please enter numbers separated by commas.\n")
+    return selected_jobs
+
+
 # Greeting    
 print("\n-------------------------------------------------------------")
 print("Welcome to your Job Aggregator!")
@@ -134,21 +152,9 @@ while True:
         current_jobs = search_and_display_jobs()
     elif choice == "2": # Save Jobs
         if current_jobs: 
-            jobs_to_save = []
-            print("Enter a sequence of job numbers separated by commas like so: 1, 4, 7, 5")
-            job_indexes = input("\nJobs you want to save: ").strip() # get job numbers from user
-            try:
-                # Parse job numbers
-                job_indexes = job_indexes.split(",")
-                for job_index in job_indexes:
-                    job_index = int(job_index.strip())
-                    if job_index >= 1 and job_index <= len(current_jobs):
-                        jobs_to_save.append(current_jobs[job_index-1]) # store the jobs to be saved
-                    else:
-                        print(f"Job #{job_index} does not exist and was not saved. Please ensure you enter job numbers in the above list in future.")
-                save_jobs(jobs_to_save) # save jobs
-            except ValueError:
-                print("Invalid input. Please enter numbers separated by commas.")
+            selected_jobs = select_jobs(current_jobs) # let user select the jobs they want to save
+            if selected_jobs:
+                save_jobs(selected_jobs) # save jobs
         else: # No jobs have been searched so can't save anything
             print("\nPlease search some jobs first, there is nothing to save in this session.\n")
     elif choice == "3": # List Saved Jobs
