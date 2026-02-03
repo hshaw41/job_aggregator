@@ -162,10 +162,8 @@ while True:
         if saved_jobs:
             # display them
             print("\nSaved Jobs:\n")
-            index = 1
-            for job in saved_jobs:
+            for index, job in enumerate(saved_jobs, 1):
                 display_job(job, index)
-                index += 1
         else:
             print("\nNo saved jobs to display. Search and save some jobs before using this option.\n")
     elif choice == "4": # Quit
