@@ -91,17 +91,24 @@ def search_and_display_jobs():
 def save_jobs(jobs_to_save):
     """This function takes a list of job dictionaries and saves them to a file. If jobs have been saved in the past the function adds the new jobs to the exisiting saved list."""
 
-    # Get jobs already saved if any. If no jobs create new list.
+    # Get jobs already saved if any.
+    old_saved_jobs = load_saved_jobs()
+    saved_jobs = old_saved_jobs + jobs_to_save # add new saved jobs to existing saved jobs
+    with open("saved_jobs.json", "w") as f:
+        json.dump(saved_jobs, f, indent = 2)
+    print(f"\nSuccessfully added {len(jobs_to_save)} jobs.") # confirm with the user how many jobs were saved.
+    return
+
+def load_saved_jobs():
+    """This function gets saved jobs from the saved_jobs.json file and returns it as a list of jobs dictionaries."""
+
     try:
         with open("saved_jobs.json", "r") as f:
             saved_jobs = json.load(f)
     except FileNotFoundError:
         saved_jobs = []
-    saved_jobs = saved_jobs + jobs_to_save # add new saved jobs to existing saved jobs
-    with open("saved_jobs.json", "w") as f:
-        json.dump(saved_jobs, f, indent = 2)
-    print(f"\nSuccessfully added {len(jobs_to_save)} jobs.") # confirm with the user how many jobs were saved.
-    return
+
+    return saved_jobs
     
 # Greeting    
 print("\n-------------------------------------------------------------")
@@ -113,20 +120,20 @@ while True:
     # Main menu
     print("Enter the number that corresponds with one of the following options:")
     print("\n1. Search Jobs")
-    if len(current_jobs) != 0:
+    if current_jobs:
         print("2. Save Jobs")
-        print("3. Quit")
     else:
-        print("2. Quit")
+        print("2. Save Jobs (Not Available. Search Jobs First)")
+    print("3. List Saved Jobs")
+    print("4. Quit")
 
     choice = input("\nChoice: ").strip() # get input
-
     # Handle menu choices
     if choice == "1": # Search Jobs
         print("\nJobs Found:\n")
         current_jobs = search_and_display_jobs()
-    elif choice == "2": # either Save Jobs or Quit. 
-        if len(current_jobs) != 0: # Choice is Save Jobs of jobs have been searched before, otherwise quit.
+    elif choice == "2": # Save Jobs
+        if current_jobs: 
             jobs_to_save = []
             print("Enter a sequence of job numbers separated by commas like so: 1, 4, 7, 5")
             job_indexes = input("\nJobs you want to save: ").strip() # get job numbers from user
@@ -142,11 +149,20 @@ while True:
                 save_jobs(jobs_to_save) # save jobs
             except ValueError:
                 print("Invalid input. Please enter numbers separated by commas.")
-        else: # Choice must be quit.
-            print("\nClosing...")
-            exit(0)
-    elif choice == "3":
-        # Choice must be Quit.
+        else: # No jobs have been searched so can't save anything
+            print("\nPlease search some jobs first, there is nothing to save in this session.\n")
+    elif choice == "3": # List Saved Jobs
+        saved_jobs = load_saved_jobs()
+        if saved_jobs:
+            # display them
+            print("\nSaved Jobs:\n")
+            index = 1
+            for job in saved_jobs:
+                display_job(job, index)
+                index += 1
+        else:
+            print("\nNo saved jobs to display. Search and save some jobs before using this option.\n")
+    elif choice == "4": # Quit
         print("\nClosing...")
         exit(0)
     else:
